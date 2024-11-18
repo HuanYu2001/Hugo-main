@@ -1,0 +1,34 @@
+name: deploy-to-github
+
+on:
+  push:
+    branches:
+      - master  # 當main分支有push操作時
+
+jobs:
+  deploy:
+    runs-on: ubuntu-20.04
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          submodules: true  # 找尋Hugo主題(true OR recursive)
+          fetch-depth: 0    # Fetch all history for .GitInfo and .Lastmod
+
+      - name: Setup Hugo
+        uses: peaceiris/actions-hugo@v2
+        with:
+          hugo-version: '0.92.2' # hugo 版本
+          extended: true  # 如果是使用extended版本的務必取消註解。
+      - name: Build
+        run: hugo --gc --minify --cleanDestinationDir
+
+      - name: Deploy
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          external_repository: username/username.github.io
+          deploy_key: ${{ secrets.ACTIONS_DEPLOY_KEY }} #設定推送的 Token，直接設為 ${{ secrets.GITHUB_TOKEN }} 就可以了，GITHUB_TOKEN 會由 actions 去處理。
+          PUBLISH_BRANCH: master  # 推送到 gh-pages 分支
+          PUBLISH_DIR: ./public     # hugo 生成的目錄
+          commit_message: ${{ github.event.head_commit.message }}
+          cname: josh-ku.com
+          force_orphan: true #在目標分支，只保留最後一個提交，預設為 false。
